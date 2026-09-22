@@ -1,0 +1,17 @@
+{
+  "name": "VAX AQUA — לוח מגופים",
+  "short_name": "VAX AQUA",
+  "dir": "rtl",
+  "lang": "he",
+  "start_url": "/",
+  "display": "standalone",
+  "background_color": "#070D0C",
+  "theme_color": "#070D0C",
+  "icons": [
+    {
+      "src": "/favicon.ico",
+      "sizes": "48x48",
+      "type": "image/x-icon"
+    }
+  ]
+}

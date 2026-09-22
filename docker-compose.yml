@@ -1,0 +1,21 @@
+services:
+  db:
+    image: postgres:16-alpine
+    container_name: vax-aqua-db
+    restart: unless-stopped
+    environment:
+      POSTGRES_USER: vax
+      POSTGRES_PASSWORD: vax
+      POSTGRES_DB: vaxaqua
+    ports:
+      - "5433:5432"
+    volumes:
+      - vax_pgdata:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U vax -d vaxaqua"]
+      interval: 5s
+      timeout: 5s
+      retries: 10
+
+volumes:
+  vax_pgdata:

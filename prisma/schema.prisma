@@ -1,0 +1,187 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+model Organization {
+  id        Int        @id @default(autoincrement())
+  uuid      String     @unique @default(uuid()) @db.Uuid
+  slug      String     @unique
+  name      String
+  createdAt DateTime   @default(now())
+  users     User[]
+  customers Customer[]
+}
+
+model User {
+  id             Int          @id @default(autoincrement())
+  uuid           String       @unique @default(uuid()) @db.Uuid
+  email          String       @unique
+  passwordHash   String
+  name           String
+  companyName    String       @default("אביזרי הולכת מים")
+  role           String       @default("member")
+  tokenVersion   Int          @default(0)
+  organizationId Int
+  organization   Organization @relation(fields: [organizationId], references: [id])
+  createdAt      DateTime     @default(now())
+  updatedAt      DateTime     @updatedAt
+  settings       Settings?
+  customers      Customer[]
+  auditLogs      AuditLog[]
+
+  @@index([organizationId])
+}
+
+model AuditLog {
+  id         Int      @id @default(autoincrement())
+  uuid       String   @unique @default(uuid()) @db.Uuid
+  userId     Int
+  user       User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  action     String
+  entity     String
+  entityUuid String?
+  meta       Json?
+  createdAt  DateTime @default(now())
+
+  @@index([userId, createdAt])
+}
+
+model Settings {
+  id          Int      @id @default(autoincrement())
+  uuid        String   @unique @default(uuid()) @db.Uuid
+  userId      Int      @unique
+  user        User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  silenceDays Int      @default(14)
+  outreachTpl String   @default("") @db.Text
+  visitHour   Int      @default(10)
+  updatedAt   DateTime @updatedAt
+}
+
+model Region {
+  id        Int        @id @default(autoincrement())
+  uuid      String     @unique @default(uuid()) @db.Uuid
+  slug      String     @unique
+  name      String
+  subtitle  String
+  code      String
+  customers Customer[]
+}
+
+model Customer {
+  id             Int          @id @default(autoincrement())
+  uuid           String       @unique @default(uuid()) @db.Uuid
+  userId         Int
+  user           User         @relation(fields: [userId], references: [id], onDelete: Cascade)
+  organizationId Int
+  organization   Organization @relation(fields: [organizationId], references: [id])
+  regionId       Int
+  region         Region       @relation(fields: [regionId], references: [id])
+
+  name        String
+  type        String
+  place       String
+  contactName String
+  role        String
+  phone       String
+  phone2      String @default("")
+  email       String @default("")
+  address     String @default("")
+  products    String[]
+  annualVol   Int    @default(0)
+  tier        String @default("C")
+  status      String @default("active")
+  since       Int    @default(0)
+  terms       String @default("")
+  channel     String @default("direct")
+  openQuote   Int    @default(0)
+  openQuoteAt DateTime?
+  lastVisitAt DateTime?
+  memo        String @default("") @db.Text
+
+  outreachStatus      String?
+  outreachSentAt      DateTime?
+  outreachVisitAt     DateTime?
+  outreachConfirmedAt DateTime?
+
+  seminarState  String   @default("none")
+  seminarTopics String[]
+  seminarSeats  Int      @default(0)
+  seminarNote   String   @default("")
+  seminarAt     DateTime?
+
+  calls  Call[]
+  orders Order[]
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@index([userId])
+  @@index([organizationId])
+  @@index([regionId])
+  @@index([userId, phone])
+}
+
+model Call {
+  id         Int      @id @default(autoincrement())
+  uuid       String   @unique @default(uuid()) @db.Uuid
+  customerId Int
+  customer   Customer @relation(fields: [customerId], references: [id], onDelete: Cascade)
+  at         DateTime
+  kind       String
+  outcome    String
+  summary    String   @db.Text
+  minutes    Int      @default(0)
+  nextAction String   @default("")
+  nextAt     DateTime?
+  nextDone   Boolean  @default(false)
+  notes      CallNote[]
+  createdAt  DateTime @default(now())
+  updatedAt  DateTime @updatedAt
+
+  @@index([customerId])
+  @@index([at])
+}
+
+model CallNote {
+  id        Int      @id @default(autoincrement())
+  uuid      String   @unique @default(uuid()) @db.Uuid
+  callId    Int
+  call      Call     @relation(fields: [callId], references: [id], onDelete: Cascade)
+  text      String   @db.Text
+  at        DateTime @default(now())
+  by        String
+}
+
+model Order {
+  id         Int      @id @default(autoincrement())
+  uuid       String   @unique @default(uuid()) @db.Uuid
+  customerId Int
+  customer   Customer @relation(fields: [customerId], references: [id], onDelete: Cascade)
+  num        String
+  at         DateTime
+  status     String
+  due        DateTime?
+  note       String   @default("")
+  lines      OrderLine[]
+  createdAt  DateTime @default(now())
+  updatedAt  DateTime @updatedAt
+
+  @@index([customerId])
+}
+
+model OrderLine {
+  id      Int    @id @default(autoincrement())
+  uuid    String @unique @default(uuid()) @db.Uuid
+  orderId Int
+  order   Order  @relation(fields: [orderId], references: [id], onDelete: Cascade)
+  item    String
+  spec    String @default("")
+  qty     Int
+  unit    String
+  price   Int
+}
